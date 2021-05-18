@@ -1,0 +1,109 @@
+// set up a simple neutral simulation
+initialize() {
+	
+	// Call things from the command line otherwise
+	if (exists("slimgui")) {
+		//defineConstant("N", 20000);		// size of population		
+		defineConstant("founding_size", 500);		// N of individuals used to found
+		defineConstant("demo_data","~/Exeter/fibr_simulations/data/CA_simulation_demography.txt");
+		defineConstant("burnin_path","~/Exeter/fibr_simulations/outputs/GH_burnin.txt");
+	}
+	
+	// Make sure we keep substitutions
+	
+	
+	// Initialise tree-sequencing to check for coalescence
+	initializeTreeSeq(simplificationInterval=1000,checkCoalescence=T);
+	
+	// Set mutation rate based on Kunster et al 2016
+	initializeMutationRate(4.89e-8);
+	
+	// m1 mutation type: neutral, make sure these aren't converted away
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	m1.convertToSubstitution = F;
+	
+	// g1 genomic element type: uses m1 for all mutations
+	initializeGenomicElementType("g1", m1, 1.0);
+	
+	// uniform chromosome of length 100 kb with uniform recombination
+	initializeGenomicElement(g1, 0, 99999);
+	initializeRecombinationRate(1e-8);
+
+}
+
+// Read in our burn-in
+1 late() {
+	
+	// Read in our p1
+	sim.readFromPopulationFile(burnin_path);
+	sim.generation = 1;
+	
+	// Make our p2
+	sim.addSubpopSplit("p2",founding_size,p1);
+	
+	// Kill our p1
+	p1.setSubpopulationSize(0);
+	
+	// Report on our starting frequencies
+	muts = sim.mutationsOfType(m1);
+	freqs = sim.mutationFrequencies(p2);
+	
+	// Remove very low frequency mutations
+	muts = muts[which(freqs > 0.01)];
+	freqs = freqs[which(freqs > 0.01)];
+	
+	// Set up titles
+	catn("mutation_id " + " " + "freq" + " " + "generation");
+	
+	// Print to output
+	for(i in 0:(length(muts)-1)){
+		catn(muts[i].id + " " + freqs[i] + " " + sim.generation);
+		//print(out_m);
+	}
+
+}
+
+// From here on, we will read in the values from the demography file and create a new population
+2:30 late() {
+	
+	// Fetch our demography data
+	demo_file = readFile(demo_data);
+	total_generations = length(demo_file);
+	
+	if(sim.generation <= total_generations){
+		
+		// Fetch our demography values (-1 here as zero indexed and we have column names)
+		female_mean = asFloat(strsplit(demo_file[sim.generation-1],"\t")[1]);
+		female_sd = asFloat(strsplit(demo_file[sim.generation-1],"\t")[2]);
+		male_mean = asFloat(strsplit(demo_file[sim.generation-1],"\t")[3]);
+		male_sd = asFloat(strsplit(demo_file[sim.generation-1],"\t")[4]);
+		
+		// Calculate new size with error
+		new_size = asInteger(rnorm(1,female_mean,female_sd) + rnorm(1,male_mean,male_sd));
+		
+		// Set our new population size
+		p2.setSubpopulationSize(new_size);
+		
+		// Report on mutation frequencies
+		muts = sim.mutationsOfType(m1);
+		freqs = sim.mutationFrequencies(p2);
+		
+		// Remove very low frequency mutations
+		muts = muts[which(freqs > 0.01)];
+		freqs = freqs[which(freqs > 0.01)];
+		
+		// Print to output
+		for(i in 0:(length(muts)-1)){
+			catn(muts[i].id + " " + freqs[i] + " " + sim.generation);
+			//print(out_m);
+		}
+	
+	
+	} else {
+		
+		// Finish
+		sim.simulationFinished();
+	}
+
+}
+

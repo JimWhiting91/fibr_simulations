@@ -1,0 +1,55 @@
+// set up a simple neutral simulation
+initialize() {
+	
+	// Call things from the command line otherwise
+	if (exists("slimgui")) {
+		defineConstant("N", 20000);		// size of population		
+	}
+	
+	// Initialise tree-sequencing to check for coalescence
+	initializeTreeSeq(simplificationInterval=1000,checkCoalescence=T);
+	
+	// Set mutation rate based on Kunster et al 2016
+	initializeMutationRate(4.89e-8);
+	
+	// m1 mutation type: neutral
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	
+	// g1 genomic element type: uses m1 for all mutations
+	initializeGenomicElementType("g1", m1, 1.0);
+	
+	// uniform chromosome of length 100 kb with uniform recombination
+	initializeGenomicElement(g1, 0, 99999);
+	initializeRecombinationRate(1e-8);
+}
+
+// create a population of N individuals
+1 {
+	sim.addSubpop("p1", N);
+}
+
+// Run the simulation to coalescence to create a burn-in source population
+1: late() {
+	if (sim.treeSeqCoalesced()) {
+		
+		// Finish simulations and output results
+		catn(sim.generation + ": COALESCED");
+		sim.outputFull("~/Exeter/fibr_simulations/outputs/GH_burnin.txt");
+		
+		sim.simulationFinished();
+	}
+}
+
+//// Burn-in with 10N 
+//200000 late() {
+//	
+//	// Finish simulations and output results
+//	sim.outputFull("~/Exeter/fibr_simulations/outputs/GH_burnin.txt");
+//	sim.simulationFinished();
+//}
+
+
+// End here otherwise
+500000 late() {
+	catn("NO COALESCENCE BY GENERATION 500000");
+}
