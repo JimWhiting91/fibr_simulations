@@ -155,19 +155,62 @@ ggplot(plot_af_change_avg,aes(x=sel_coef_interval,y=mean_AF))+
 
 ##### Allele enrichment and selection ######
 #af_enrich_selection <- res %>% group_by(mutation_id_run) %>% group_map(~calc_allele_enrich(.x))
+calc_allele_enrich  <- function(x){
+  
+  # First work out direction
+  af_dir <- ifelse(x[x$generation==1,"freq"] < x[x$generation==max(x$generation),"freq"],"up","down")
+  final_freq <- ifelse(any(x$generation == max_gen),x[x$generation==max(x$generation),"freq"],0)
+  
+  # Caculate enrichment
+  if(af_dir == "up"){
+    af_enrich <- (final_freq - x$freq[which(x$generation == 1)]) / x$freq[which(x$generation == 1)]
+  } else {
+    af_enrich <- (final_freq - x$freq[which(x$generation == 1)]) / (1-x$freq[which(x$generation == 1)])
+  }
+  return(data.frame(mutation_id_run=unique(x$mutation_id_run),
+                    af_enrich=af_enrich,
+                    start_interval=unique(x$start_interval),
+                    start_af=x[x$generation==1,"freq"],
+                    end_af=final_freq))
+}
 af_enrich_selection <- pbmcapply::pbmclapply(unique(res$mutation_id_run),function(x){
   calc_allele_enrich(res[res$mutation_id_run == x,])
 },mc.cores = 6)
 
 # Plot these...
 plot_af_enrich <- data.frame(rbindlist(af_enrich_selection))
-ggplot(plot_af_change[plot_af_change$sel_coef != 0,],aes(x=sel_coef,y=AF_change))+
-  facet_wrap(~start_interval,ncol=2)+
-  geom_point()+
-  geom_smooth()+
-  geom_hline(yintercept=0,linetype="dotted")
 
-# Bin our data into
-plot_af_change$sel_coef_interval <- cut_interval(plot_af_change$sel_coef,n=10)
+# Get selection coefs
+sel_coefs <- unique(res[,c("mutation_id_run","sel_coef")])
+plot_af_enrich_merge <- merge(plot_af_enrich,sel_coefs,by="mutation_id_run")
+
+# Of selected variants
+ggplot(plot_af_enrich_merge[plot_af_enrich_merge$sel_coef != 0,],aes(x=abs(sel_coef),y=log10(abs(af_enrich))))+
+  geom_point()+
+  geom_smooth()
+  #geom_hline(yintercept=0,linetype="dotted")
+
+ggplot(plot_af_enrich_merge[plot_af_enrich_merge$sel_coef != 0 & abs(plot_af_enrich_merge$sel_coef) > 0.1,],aes(x=(sel_coef),y=log10(abs(af_enrich))))+
+  geom_point()+
+  geom_smooth()
+
+ggplot(plot_af_enrich_merge[plot_af_enrich_merge$sel_coef == 0,],aes(x=log10(abs(af_enrich))))+
+  #geom_histogram()+
+  geom_density()
+
+ggplot(plot_af_enrich_merge[plot_af_enrich_merge$sel_coef != 0,],aes(x=log10(abs(af_enrich))))+
+  #geom_histogram()+
+  geom_density()
+
+ggplot(plot_af_enrich_merge,aes(x=log10(abs(af_enrich))))+
+  #geom_histogram()+
+  geom_density()
+
+# Also visualise here af_diff effect
+plot_af_enrich_merge$AFD <- plot_af_enrich_merge$end_af - plot_af_enrich_merge$start_af
+ggplot(plot_af_enrich_merge[plot_af_enrich_merge$sel_coef != 0,],aes(x=AFD,y=(abs(af_enrich))))+
+  geom_point()+
+  geom_smooth()
+
 
 

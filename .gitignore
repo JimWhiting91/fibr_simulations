@@ -2,6 +2,12 @@
 .Rhistory
 .Rapp.history
 
+# Don't save outputs
+outputs/
+data/
+figs/
+*.Rproj
+
 # Session Data files
 .RData
 
@@ -37,3 +43,5 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+.DS_Store
