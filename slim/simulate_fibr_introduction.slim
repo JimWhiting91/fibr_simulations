@@ -4,9 +4,9 @@ initialize() {
 	// Call things from the command line otherwise
 	if (exists("slimgui")) {
 		//defineConstant("N", 20000);		// size of population		
-		defineConstant("founding_size", 500);		// N of individuals used to found
-		defineConstant("demo_data","~/Exeter/fibr_simulations/data/CA_simulation_demography.txt");
-		defineConstant("burnin_path","~/Exeter/fibr_simulations/outputs/GH_burnin.txt");
+		defineConstant("founding_size", 76);		// N of individuals used to found
+		defineConstant("demo_data","~/Exeter/fibr_simulations/data/LL_simulation_demography.txt");
+		defineConstant("burnin_path","~/Exeter/fibr_simulations/data/GH_burnin.txt");
 	}
 	
 	// Make sure we keep substitutions
@@ -32,11 +32,51 @@ initialize() {
 }
 
 // Read in our burn-in
-1 late() {
+1 early() {
 	
 	// Read in our p1
 	sim.readFromPopulationFile(burnin_path);
 	sim.generation = 1;
+	
+	// Set up titles for output...
+	catn("mutation_id " + " " + "freq" + " " + "generation");
+	
+	// Calculate starting AFs according to founder
+	muts0 = sim.mutationsOfType(m1);
+	freqs0 = sim.mutationFrequencies(p1);
+	
+	// Remove very low frequency mutations
+	muts0 = muts0[which(freqs0 > 0.01)];
+	freqs0 = freqs0[which(freqs0 > 0.01)];
+		
+	// Print to output
+	for(i in 0:(length(muts0)-1)){
+		catn(muts0[i].id + " " + freqs0[i] + " " + "0");
+		//print(out_m);
+	}
+}
+1 late() {
+	
+//	// Read in our p1
+//	sim.readFromPopulationFile(burnin_path);
+//	sim.generation = 1;
+//	
+//	// Set up titles for output...
+//	catn("mutation_id " + " " + "freq" + " " + "generation");
+//	
+//	// Calculate starting AFs according to founder
+//	muts = sim.mutationsOfType(m1);
+//	freqs = sim.mutationFrequencies(p1);
+//	
+//	// Remove very low frequency mutations
+//	muts = muts[which(freqs > 0.01 & freqs < 0.99)];
+//	freqs = freqs[which(freqs > 0.01 & freqs < 0.99)];
+//		
+//	// Print to output
+//	for(i in 0:(length(muts)-1)){
+//		catn(muts[i].id + " " + freqs[i] + " " + "0");
+//		//print(out_m);
+//	}
 	
 	// Make our p2
 	sim.addSubpopSplit("p2",founding_size,p1);
@@ -44,17 +84,14 @@ initialize() {
 	// Kill our p1
 	p1.setSubpopulationSize(0);
 	
-	// Report on our starting frequencies
+	// Report on our starting frequencies following founding
 	muts = sim.mutationsOfType(m1);
 	freqs = sim.mutationFrequencies(p2);
 	
 	// Remove very low frequency mutations
 	muts = muts[which(freqs > 0.01)];
 	freqs = freqs[which(freqs > 0.01)];
-	
-	// Set up titles
-	catn("mutation_id " + " " + "freq" + " " + "generation");
-	
+		
 	// Print to output
 	for(i in 0:(length(muts)-1)){
 		catn(muts[i].id + " " + freqs[i] + " " + sim.generation);
