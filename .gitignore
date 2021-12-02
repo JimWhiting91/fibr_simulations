@@ -45,3 +45,14 @@ vignettes/*.pdf
 .Renviron
 
 .DS_Store
+
+scripts/old
+slim/old
+scripts/logs
+R/old
+data/*chr15*
+data/genomicscensusdata.csv
+figs/
+tables/
+outputs/
+.gitignore
