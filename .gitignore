@@ -13,6 +13,7 @@ data/AF
 data/*chr15*
 data/genomicscensusdata.csv
 figs/*pdf
+figs/old
 tables/
 outputs/
 .gitignore
