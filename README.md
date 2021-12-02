@@ -2,8 +2,8 @@
 Simulations of allele frequency dynamics among the FIBR guppy introduction experiments
 
 ### Author Contact Information
-b.fraser@exeter.ac.uk
-james.whiting@ucalgary.ca
+  * b.fraser@exeter.ac.uk
+  * james.whiting@ucalgary.ca
 
 ### Usage and license information
 If you use or are inspired by code in this repository please cite the following work or contact me about how to cite:
@@ -18,7 +18,9 @@ All simulations were performed with [SLiM](https://messerlab.org/slim/) (v3.4), 
 
 Clone this repo somewhere locally, and run the following to build the expected directory structure:
 ```
-mkdir outputs figs tables
+git clone git@github.com:JimWhiting91/fibr_simulations.git
+cd fibr_simulations
+mkdir outputs tables
 ```
 
 ### Simulation Workflow
